@@ -102,7 +102,6 @@ body::after {
 .booking-form input:focus, .booking-form textarea:focus { border-color: var(--primary) !important; }
 .booking-form input::placeholder, .booking-form textarea::placeholder { color: var(--ink-60) !important; }
 
-/* КНОПКА ЗАПИСИ (ФИРМЕННЫЙ ЗЕЛЕНЫЙ) */
 .btn-submit {
   width: 100%; padding: 1.2rem; font-family: 'Jost', sans-serif; font-size: .8rem; font-weight: 600;
   letter-spacing: .12em; text-transform: uppercase; border-radius: 12px;
@@ -112,7 +111,6 @@ body::after {
 .btn-submit:disabled { opacity: .4; cursor: not-allowed; background: var(--ink-30); }
 .form-note { font-size: .75rem; color: var(--ink-60); text-align: center; margin-top: 1.1rem; line-height: 1.4; }
 
-/* ГАЛОЧКА ПОДТВЕРЖДЕНИЯ (ФИРМЕННЫЙ ЗЕЛЕНЫЙ) */
 .privacy-wrap { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 1.2rem; }
 .privacy-wrap input[type="checkbox"] { 
   width: auto !important; margin-top: 0.2rem !important; margin-bottom: 0 !important; cursor: pointer; 
@@ -121,11 +119,9 @@ body::after {
 .privacy-wrap label { font-size: 0.78rem; color: var(--ink-60); line-height: 1.4; cursor: pointer; }
 .privacy-wrap label a { color: var(--primary) !important; text-decoration: underline !important; }
 
-/* МОДАЛКА УСПЕХА ПО ЦЕНТРУ (FROSTED GLASS) */
 .success-overlay {
   position: fixed; inset: 0; z-index: 2147483000;
   display: none; align-items: center; justify-content: center; padding: 1.5rem;
-  /* фон-подложка теперь на самом оверлее — отдельного перехватывающего слоя нет */
   background: rgba(15, 13, 11, 0.45);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
@@ -154,7 +150,6 @@ body::after {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
 }
 
-/* СТИЛИ COOKIE БАННЕРА */
 .cookie-banner {
   position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
   width: calc(100% - 3rem); max-width: 600px; background: var(--card);
@@ -240,7 +235,6 @@ body::after {
   </div>
 </div>
 
-<!-- ══ КРАСИВОЕ МОДАЛЬНОЕ ОКНО УСПЕХА ПО ЦЕНТРУ ══ -->
 <div class="success-overlay" id="successOverlay" style="display: none;" onclick="if(event.target===this)closeSuccessModal()">
   <div class="success-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
     <button type="button" class="success-modal-close" onclick="closeSuccessModal()">×</button>
@@ -263,7 +257,6 @@ body::after {
   </div>
 </div>
 
-<!-- БАННЕР COOKIE -->
 <div class="cookie-banner" id="cookieBanner" style="display: none;">
   <div class="cookie-content">
     <p>Мы используем файлы cookie для анализа трафика и улучшения работы сайта. Оставаясь на сайте, вы соглашаетесь с нашей <a href="https://yanapro.ru/legal-privacy" target="_blank" rel="noopener">Политикой конфиденциальности</a>.</p>
@@ -367,10 +360,9 @@ window.acceptCookies = function() {
   banner.style.display = 'none';
 };
 
-// Функция закрытия окна успеха
 window.closeSuccessModal = function() {
   successOverlay.style.display = 'none';
-  location.reload(); // Перезапускаем страницу, чтобы обновить забронированные часы
+  location.reload();
 };
 
 async function fetchScheduleConfig() {
@@ -391,10 +383,12 @@ function getSlotsForDay(year, month, day) {
   return dynamicSchedule[String(dayOfWeek)] || [];
 }
 
+/* ═══ ИЗМЕНЕНО: читаем занятость из busySlots (без персональных данных),
+   а не из bookings — форма больше не имеет прав читать bookings ═══ */
 async function loadBookings() {
   if (!db) return;
   await fetchScheduleConfig();
-  const snapshot = await db.collection('bookings').get();
+  const snapshot = await db.collection('busySlots').get();
   snapshot.forEach(doc => {
     const d = doc.data();
     if (d.date && d.time) bookedSlots.add(`${d.date}|${d.time}`);
@@ -474,7 +468,6 @@ function updateSummary() {
 document.getElementById('prevMonth').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
 document.getElementById('nextMonth').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
 
-/* ГЕНЕРАЦИЯ .ICS СОБЫТИЯ ДЛЯ КАЛЕНДАРЯ КЛИЕНТА (50 минут) */
 window.addClientToCalendar = function() {
   if (!selectedDate || !selectedTime) return;
   
@@ -510,8 +503,6 @@ window.addClientToCalendar = function() {
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
   const url = window.URL.createObjectURL(blob);
 
-  // iOS Safari игнорирует атрибут download у blob-ссылки — открываем файл напрямую,
-  // чтобы система предложила добавить событие в календарь.
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
              || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -529,6 +520,9 @@ window.addClientToCalendar = function() {
   setTimeout(() => window.URL.revokeObjectURL(url), 10000);
 };
 
+/* ═══ ИЗМЕНЕНО: атомарное бронирование через транзакцию.
+   ID документа = дата_время → Firestore сам не даст создать дубликат,
+   т.к. запись и проверка занятости теперь одна неделимая операция. ═══ */
 bookingForm.onsubmit = async function(e) {
   e.preventDefault();
   const btn = submitBtn;
@@ -553,23 +547,25 @@ bookingForm.onsubmit = async function(e) {
   const data = Object.fromEntries(formData.entries());
   const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUs7UiC5603ebcn0PzWVetAmS34dNjmXBjduJg4j-nG9-DMqSqSpC7iLd_x2oeD7QK/exec";
 
-  try {
-    // Защита от двойной брони: слот мог занять кто-то, пока страница была открыта
-    const daySnap = await db.collection('bookings').where('date', '==', data.date).get();
-    const alreadyTaken = daySnap.docs.some(doc => doc.data().time === data.time);
-    if (alreadyTaken) {
-      alert('К сожалению, это время только что забронировали. Пожалуйста, выберите другой свободный слот.');
-      location.reload();
-      return;
-    }
+  const slotId = `${data.date}_${data.time}`;
+  const bookingRef = db.collection('bookings').doc(slotId);
+  const busyRef = db.collection('busySlots').doc(slotId);
 
-    await db.collection('bookings').add({
-      ...data,
-      status: 'new',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  try {
+    await db.runTransaction(async (tx) => {
+      const busyDoc = await tx.get(busyRef);
+      if (busyDoc.exists) {
+        throw new Error('SLOT_TAKEN');
+      }
+      tx.set(bookingRef, {
+        ...data,
+        status: 'new',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      tx.set(busyRef, { date: data.date, time: data.time });
     });
 
-        if (LOG_SCRIPT_URL) {
+    if (LOG_SCRIPT_URL) {
       fetch(LOG_SCRIPT_URL + "?key=Musina80!", {
         method: "POST",
         mode: "no-cors",
@@ -578,11 +574,15 @@ bookingForm.onsubmit = async function(e) {
       }).catch(e => console.warn("AppScript logging failed", e));
     }
 
-    // Показываем красивое модальное окно успеха
     successOverlay.style.display = "flex";
-    
+
   } catch(err) {
     console.error("Booking submission error:", err);
+    if (err && err.message === 'SLOT_TAKEN') {
+      alert('К сожалению, это время только что забронировали. Пожалуйста, выберите другой свободный слот.');
+      location.reload();
+      return;
+    }
     alert("Произошла ошибка при отправке записи. Попробуйте еще раз.");
     btn.disabled = false;
     btn.textContent = "Записаться";
