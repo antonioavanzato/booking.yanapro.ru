@@ -38,7 +38,6 @@ body {
   position: relative;
 }
 
-/* Декоративный шум как на главном сайте */
 body::after {
   content: '';
   position: absolute; inset: 0;
@@ -48,7 +47,6 @@ body::after {
   z-index: 9999;
 }
 
-/* ШАПКА СТРАНИЦЫ ЗАПИСИ */
 .header {
   max-width: 1100px;
   margin: 0 auto;
@@ -74,11 +72,8 @@ body::after {
   gap: .55em;
   transition: color .3s;
 }
-.btn-back:hover {
-  color: var(--primary);
-}
+.btn-back:hover { color: var(--primary); }
 
-/* СЕТКА СИСТЕМЫ БРОНИРОВАНИЯ */
 .booking-layout {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -91,7 +86,6 @@ body::after {
   z-index: 10;
 }
 
-/* КАЛЕНДАРЬ */
 .booking-calendar {
   background: var(--card);
   border-radius: 24px;
@@ -149,7 +143,6 @@ body::after {
 .slot-btn.booked { opacity: .3; cursor: not-allowed; background: var(--surface-deep); border-style: dashed; }
 .slot-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
 
-/* КАРТОЧКА ФОРМЫ */
 .booking-form-card {
   background: var(--white);
   border-radius: 24px;
@@ -318,6 +311,8 @@ const firebaseConfig = {
 };
 
 let db = null;
+let dynamicSchedule = null; // Шаблон расписания, загруженный из БД
+
 function initFirebase(cb) {
   var tries = 0;
   (function attempt() {
@@ -379,32 +374,43 @@ if (phoneInput) {
   });
 }
 
-const SCHEDULE = {
-  0: [], 1: [{ start: 9, end: 20 }],
-  2: [{ start: 8, end: 13 }, { start: 18, end: 19, exact: ['18:00', '19:00'] }],
-  3: [{ start: 8, end: 20 }], 4: [{ start: 14, end: 20 }],
-  5: [{ start: 9, end: 20 }], 6: [{ start: 10, end: 16 }]
-};
-
-function generateSlots(start, end, exact = null) {
-  if (exact) return exact;
-  const slots = [];
-  for (let h = start; h < end; h++) { if (h === 13) continue; slots.push(`${String(h).padStart(2,'0')}:00`); }
-  return slots;
+// Загрузка динамического расписания из настроек БД
+async function fetchScheduleConfig() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('settings').doc('schedule').get();
+    if (doc.exists) {
+      dynamicSchedule = doc.data();
+    } else {
+      throw new Error("Doc not found");
+    }
+  } catch (e) {
+    // Резервный дефолтный график, если в базе ничего не настроено
+    dynamicSchedule = {
+      "1": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+      "2": ["08:00","09:00","10:00","11:00","12:00","18:00","19:00"],
+      "3": ["08:00","09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+      "4": ["14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+      "5": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+      "6": ["10:00","11:00","12:00","14:00","15:00","16:00"],
+      "0": []
+    };
+  }
 }
 
 function getSlotsForDay(year, month, day) {
   const date = new Date(year, month, day);
   const dayOfWeek = date.getDay();
-  const schedule = SCHEDULE[dayOfWeek];
-  if (!schedule || schedule.length === 0) return [];
-  let all = [];
-  schedule.forEach(w => all = [...all, ...generateSlots(w.start, w.end, w.exact)]);
-  return all;
+  if (!dynamicSchedule) return [];
+  // Просто возвращаем настроенный массив строк времени для этого дня недели
+  return dynamicSchedule[String(dayOfWeek)] || [];
 }
 
 async function loadBookings() {
   if (!db) return;
+  // Сначала подтянем расписание из настроек, затем забронированные слоты
+  await fetchScheduleConfig();
+  
   const snapshot = await db.collection('bookings').get();
   snapshot.forEach(doc => {
     const d = doc.data();
