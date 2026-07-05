@@ -4,116 +4,58 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>YanaPro — Онлайн-запись на тренировку</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Rubik:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-
 <style>
 :root {
-  --primary: #2a5254;
-  --primary-mid: #3d7678;
-  --primary-pale: #c4f7f9;
-  --accent: #c9a96e;
-  --surface: #f7f4f0;
-  --surface-deep: #ede9e3;
-  --card: #ffffff;
-  --ink: #0f0d0b;
-  --ink-60: rgba(15,13,11,.6);
-  --ink-30: rgba(15,13,11,.3);
-  --ink-07: rgba(15,13,11,.07);
-  --white: #ffffff;
-  --ease: cubic-bezier(.16,1,.3,1);
+  --primary: #2a5254; --primary-mid: #3d7678; --primary-pale: #c4f7f9;
+  --accent: #c9a96e; --surface: #f7f4f0; --surface-deep: #ede9e3;
+  --card: #ffffff; --ink: #0f0d0b; --ink-60: rgba(15,13,11,.6);
+  --ink-30: rgba(15,13,11,.3); --ink-07: rgba(15,13,11,.07);
+  --white: #ffffff; --ease: cubic-bezier(.16,1,.3,1);
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
-  font-family: 'Jost', sans-serif;
-  background: var(--surface);
-  color: var(--ink);
-  min-height: 100vh;
-  min-height: 100dvh;
-  -webkit-font-smoothing: antialiased;
-  position: relative;
+  font-family: 'Jost', sans-serif; background: var(--surface); color: var(--ink);
+  min-height: 100dvh; -webkit-font-smoothing: antialiased; position: relative;
 }
-
 body::after {
-  content: '';
-  position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 9999; opacity: .025;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: .025;
-  pointer-events: none;
-  z-index: 9999;
 }
-
 .header {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.5rem 2rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  z-index: 10;
+  max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem 0;
+  display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10;
 }
-.logo img {
-  height: clamp(48px, 4vw, 60px);
-  width: auto;
-}
+.logo img { height: clamp(48px, 4vw, 60px); width: auto; }
 .btn-back {
-  font-size: .8rem;
-  font-weight: 500;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--ink-60);
-  display: flex;
-  align-items: center;
-  gap: .55em;
-  transition: color .3s;
+  font-size: .8rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-60); display: flex; align-items: center; gap: .55em; transition: color .3s;
 }
 .btn-back:hover { color: var(--primary); }
-
 .booking-layout {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 3rem;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 2rem 2rem 4rem;
-  align-items: start;
-  position: relative;
-  z-index: 10;
+  display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 3rem;
+  max-width: 1100px; margin: 0 auto; padding: 2rem 2rem 4rem; position: relative; z-index: 10;
 }
-
 .booking-calendar {
-  background: var(--card);
-  border-radius: 24px;
-  border: 1px solid var(--ink-07);
-  padding: 2.5rem 2rem;
-  box-shadow: 0 10px 40px rgba(15,13,11,.02);
+  background: var(--card); border-radius: 24px; border: 1px solid var(--ink-07);
+  padding: 2.5rem 2rem; box-shadow: 0 10px 40px rgba(15,13,11,.02);
 }
 .booking-header { text-align: center; margin-bottom: 2rem; }
-.booking-header h2 {
-  font-family: 'Rubik', sans-serif; font-size: 1.8rem; font-weight: 300;
-  color: var(--ink); margin-bottom: .5rem;
-  letter-spacing: -.02em;
-}
+.booking-header h2 { font-family: 'Rubik', sans-serif; font-size: 1.8rem; font-weight: 300; margin-bottom: .5rem; letter-spacing: -.02em; }
 .booking-header p { color: var(--ink-60); font-size: .9rem; }
-
 .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
 .cal-month { font-family: 'Rubik', sans-serif; font-size: 1.1rem; font-weight: 500; text-transform: capitalize; }
 .cal-btn {
   width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--ink-07);
-  background: transparent; color: var(--ink); cursor: pointer;
-  transition: all .3s var(--ease); display: flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--ink); cursor: pointer; transition: all .3s var(--ease);
+  display: flex; align-items: center; justify-content: center;
 }
 .cal-btn:hover { background: var(--primary); color: var(--white); border-color: var(--primary); }
-
 .cal-days-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: .5rem; }
 .cal-days-header div { text-align: center; font-size: .7rem; font-weight: 600; color: var(--ink-60); text-transform: uppercase; padding: .5rem 0; }
 .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-
 .cal-day {
   aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   border-radius: 12px; font-size: .9rem; cursor: pointer; transition: all .2s;
@@ -122,9 +64,8 @@ body::after {
 .cal-day.empty { color: var(--ink-07); cursor: default; }
 .cal-day.past { color: var(--ink-30); cursor: default; text-decoration: line-through; }
 .cal-day.weekend {
-  color: var(--ink-60);
+  color: var(--ink-60); cursor: not-allowed;
   background: repeating-linear-gradient(45deg, transparent, transparent 2px, var(--ink-07) 2px, var(--ink-07) 4px);
-  cursor: not-allowed;
 }
 .cal-day.today { border-color: var(--primary); color: var(--primary); font-weight: 600; }
 .cal-day.has-slots { background: var(--surface); }
@@ -132,7 +73,6 @@ body::after {
 .cal-day.fully-booked { background: var(--surface-deep); color: var(--ink-30); cursor: not-allowed; }
 .cal-day.fully-booked::after { content: '•'; position: absolute; bottom: 4px; color: var(--primary); }
 .cal-day.selected { background: var(--primary); color: var(--white); border-color: var(--primary); }
-
 .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: .5rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--ink-07); }
 .slot-btn {
   padding: .65rem; border-radius: 8px; border: 1px solid var(--ink-07);
@@ -142,88 +82,40 @@ body::after {
 .slot-btn:hover { background: var(--primary-pale); border-color: var(--primary); color: var(--primary); }
 .slot-btn.booked { opacity: .3; cursor: not-allowed; background: var(--surface-deep); border-style: dashed; }
 .slot-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
-
 .booking-form-card {
-  background: var(--white);
-  border-radius: 24px;
-  padding: 2.5rem 2rem;
-  box-shadow: 0 20px 60px rgba(15,13,11,.06);
-  position: sticky;
-  top: 2rem;
-  border: 1px solid var(--ink-07);
+  background: var(--white); border-radius: 24px; padding: 2.5rem 2rem;
+  box-shadow: 0 20px 60px rgba(15,13,11,.06); position: sticky; top: 2rem; border: 1px solid var(--ink-07);
 }
 .form-title { font-family: 'Rubik', sans-serif; font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; letter-spacing: -.02em; }
-
 .selected-slot-info {
-  background: var(--surface);
-  padding: 1.1rem;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  border: 1px dashed var(--ink-07);
-  transition: all .3s;
+  background: var(--surface); padding: 1.1rem; border-radius: 12px; margin-bottom: 1.5rem;
+  text-align: center; border: 1px dashed var(--ink-07); transition: all .3s;
 }
-.selected-slot-info.active {
-  background: #e9f3f2;
-  border-color: var(--primary);
-  border-style: solid;
-}
+.selected-slot-info.active { background: #e9f3f2; border-color: var(--primary); border-style: solid; }
 .selected-slot-info span { display: block; font-size: .8rem; color: var(--ink-60); margin-bottom: .2rem; }
 .selected-slot-info strong { font-family: 'Rubik', sans-serif; font-size: 1.1rem; color: var(--primary); }
-
 .booking-form input, .booking-form textarea {
   width: 100% !important; padding: 1.1rem !important; border: 1px solid var(--ink-07) !important; border-radius: 12px !important;
   background: var(--surface) !important; font-family: 'Jost', sans-serif !important; font-size: .95rem !important;
-  margin-bottom: 1rem !important; color: var(--ink) !important;
-  outline: none; transition: border-color .3s;
+  margin-bottom: 1rem !important; color: var(--ink) !important; outline: none; transition: border-color .3s;
 }
-.booking-form input:focus, .booking-form textarea:focus {
-  border-color: var(--primary) !important;
-}
-.booking-form input::placeholder, .booking-form textarea::placeholder {
-  color: var(--ink-60) !important; opacity: 1;
-}
-
+.booking-form input:focus, .booking-form textarea:focus { border-color: var(--primary) !important; }
+.booking-form input::placeholder, .booking-form textarea::placeholder { color: var(--ink-60) !important; }
 .btn-submit {
   width: 100%; padding: 1.2rem; font-family: 'Jost', sans-serif; font-size: .8rem; font-weight: 600;
   letter-spacing: .12em; text-transform: uppercase; border-radius: 12px;
-  background: var(--ink); color: var(--white); border: none; cursor: pointer;
-  transition: all .3s var(--ease); position: relative; overflow: hidden;
+  background: var(--ink); color: var(--white); border: none; cursor: pointer; transition: all .3s var(--ease);
 }
 .btn-submit:hover:not(:disabled) { background: var(--primary); box-shadow: 0 10px 30px rgba(42,82,84,.2); }
 .btn-submit:disabled { opacity: .4; cursor: not-allowed; background: var(--ink-30); }
-
 .form-note { font-size: .75rem; color: var(--ink-60); text-align: center; margin-top: 1.1rem; line-height: 1.4; }
-
-.privacy-wrap {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  margin-bottom: 1.2rem;
-  text-align: left;
-}
-.privacy-wrap input[type="checkbox"] {
-  width: auto !important;
-  margin-top: 0.2rem !important;
-  margin-bottom: 0 !important;
-  cursor: pointer;
-}
-.privacy-wrap label {
-  font-size: 0.78rem;
-  color: var(--ink-60);
-  line-height: 1.4;
-  cursor: pointer;
-  user-select: none;
-}
-.privacy-wrap label a {
-  color: var(--primary) !important;
-  text-decoration: underline !important;
-}
-
+.privacy-wrap { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 1.2rem; }
+.privacy-wrap input[type="checkbox"] { width: auto !important; margin-top: 0.2rem !important; margin-bottom: 0 !important; cursor: pointer; }
+.privacy-wrap label { font-size: 0.78rem; color: var(--ink-60); line-height: 1.4; cursor: pointer; }
+.privacy-wrap label a { color: var(--primary) !important; text-decoration: underline !important; }
 .success-message { text-align: center; padding: 2.5rem 0; display: none; }
 .success-icon { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
 .success-message h3 { font-family: 'Rubik', sans-serif; font-size: 1.6rem; font-weight: 500; margin-bottom: 0.5rem; }
-
 @media (max-width: 900px) {
   .header { padding: 1rem 1.25rem 0; }
   .booking-layout { grid-template-columns: 1fr; gap: 2rem; padding: 1rem 1.25rem 3rem; }
@@ -235,18 +127,14 @@ body::after {
 </head>
 <body>
 
-<!-- ШАПКА -->
 <header class="header">
   <a href="https://yanapro.ru" class="logo">
     <img src="https://i.wfolio.ru/x/OuSC3v-M86eEZR6vHPt_LzzlP78rUgFW/SRsa5EFJRxKHkqI-CFoZQqbtFNEfOsKV/O8O6OouHCq5Saxj2fDjQDTXPEAjGtDG7/aZ821oEH7tvKEAAoLT3LJqRwRBxAidlG/3OuhEPNDwYyaMe2oYdg8aS8OJtc5E4ou/QjIkWvhuHUNTCaaWljCYiOrFP-6T1CTx.png" alt="Яна Самойлова">
   </a>
-  <a href="https://yanapro.ru" class="btn-back">
-    ← На главную
-  </a>
+  <a href="https://yanapro.ru" class="btn-back">← На главную</a>
 </header>
 
 <div class="booking-layout">
-  <!-- КАЛЕНДАРЬ -->
   <div class="booking-calendar">
     <div class="booking-header">
       <h2>Расписание</h2>
@@ -264,7 +152,6 @@ body::after {
     <div class="slots-grid" id="slotsGrid"></div>
   </div>
 
-  <!-- ФОРМА -->
   <div class="booking-form-card">
     <h3 class="form-title">Запись на тренировку</h3>
     <div class="selected-slot-info" id="slotInfo">
@@ -275,12 +162,10 @@ body::after {
       <input type="text" name="name" placeholder="Ваше имя *" required autocomplete="name">
       <input type="tel" name="phone" placeholder="Telegram или телефон *" required>
       <textarea name="comment" placeholder="Комментарий (цели, вопросы)" rows="3"></textarea>
-
       <div class="privacy-wrap">
         <input type="checkbox" id="privacyAgree" required>
         <label for="privacyAgree">Я даю согласие на обработку персональных данных в соответствии с <a href="https://yanapro.ru/legal-privacy" target="_blank" rel="noopener">Политикой конфиденциальности</a> *</label>
       </div>
-
       <input type="hidden" name="date" id="formDate">
       <input type="hidden" name="time" id="formTime">
       <button type="submit" class="btn-submit" id="submitBtn" disabled>Записаться</button>
@@ -298,7 +183,6 @@ body::after {
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
 <script>
 (function(){
 const firebaseConfig = {
@@ -311,7 +195,16 @@ const firebaseConfig = {
 };
 
 let db = null;
-let dynamicSchedule = null;
+// Дефолтное расписание, которое подстрахует при первой загрузке страницы
+let dynamicSchedule = {
+  "1": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+  "2": ["08:00","09:00","10:00","11:00","12:00","18:00","19:00"],
+  "3": ["08:00","09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+  "4": ["14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+  "5": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+  "6": ["10:00","11:00","12:00","14:00","15:00","16:00"],
+  "0": []
+};
 
 function initFirebase(cb) {
   var tries = 0;
@@ -380,19 +273,9 @@ async function fetchScheduleConfig() {
     const doc = await db.collection('settings').doc('schedule').get();
     if (doc.exists) {
       dynamicSchedule = doc.data();
-    } else {
-      throw new Error("Doc not found");
     }
   } catch (e) {
-    dynamicSchedule = {
-      "1": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
-      "2": ["08:00","09:00","10:00","11:00","12:00","18:00","19:00"],
-      "3": ["08:00","09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
-      "4": ["14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
-      "5": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
-      "6": ["10:00","11:00","12:00","14:00","15:00","16:00"],
-      "0": []
-    };
+    console.warn("Using default local fallback schedule", e);
   }
 }
 
@@ -404,6 +287,7 @@ function getSlotsForDay(year, month, day) {
 
 async function loadBookings() {
   if (!db) return;
+  await fetchScheduleConfig();
   const snapshot = await db.collection('bookings').get();
   snapshot.forEach(doc => {
     const d = doc.data();
@@ -429,7 +313,7 @@ function renderCalendar() {
       el.classList.add('past');
     } else {
       const allSlots = getSlotsForDay(currentYear, currentMonth, day);
-      if (allSlots.length > 0) {
+      if (allSlots && allSlots.length > 0) {
         if (allSlots.every(t => bookedSlots.has(`${dateStr}|${t}`))) {
           el.classList.add('fully-booked');
         } else {
@@ -441,7 +325,6 @@ function renderCalendar() {
           };
         }
       } else {
-        // Убрали жесткую проверку getDay() === 0. Теперь если слотов нет — день становится выходным
         el.classList.add('weekend');
       }
     }
