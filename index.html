@@ -125,15 +125,13 @@ body::after {
 .success-overlay {
   position: fixed; inset: 0; z-index: 2147483000;
   display: none; align-items: center; justify-content: center; padding: 1.5rem;
-}
-.success-backdrop {
-  position: absolute; inset: 0;
+  /* фон-подложка теперь на самом оверлее — отдельного перехватывающего слоя нет */
   background: rgba(15, 13, 11, 0.45);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  transition: opacity .3s var(--ease);
 }
 .success-modal {
   position: relative; z-index: 10; width: 100%; max-width: 440px;
+  max-height: 90dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
   background: var(--card); border-radius: 24px; padding: 2.5rem 2rem;
   border: 1px solid var(--ink-07); box-shadow: 0 30px 80px rgba(15, 13, 11, 0.25);
   animation: modalPop .45s var(--ease) both; text-align: center;
@@ -243,9 +241,8 @@ body::after {
 </div>
 
 <!-- ══ КРАСИВОЕ МОДАЛЬНОЕ ОКНО УСПЕХА ПО ЦЕНТРУ ══ -->
-<div class="success-overlay" id="successOverlay" style="display: none;">
-  <div class="success-backdrop" onclick="closeSuccessModal()"></div>
-  <div class="success-modal" role="dialog" aria-modal="true">
+<div class="success-overlay" id="successOverlay" style="display: none;" onclick="if(event.target===this)closeSuccessModal()">
+  <div class="success-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
     <button type="button" class="success-modal-close" onclick="closeSuccessModal()">×</button>
     <h3 class="form-title" style="text-align: center; margin-bottom: 1.5rem; margin-top: 0.5rem;">Запись на тренировку</h3>
     
@@ -511,12 +508,25 @@ window.addClientToCalendar = function() {
   ].join('\r\n');
   
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-  const link = document.createElement('a');
-  link.href = window.URL.createObjectURL(blob);
-  link.setAttribute('download', 'yana_training_booking.ics');
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const url = window.URL.createObjectURL(blob);
+
+  // iOS Safari игнорирует атрибут download у blob-ссылки — открываем файл напрямую,
+  // чтобы система предложила добавить событие в календарь.
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (isIOS) {
+    window.location.href = url;
+  } else {
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'yana_training_booking.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  setTimeout(() => window.URL.revokeObjectURL(url), 10000);
 };
 
 bookingForm.onsubmit = async function(e) {
