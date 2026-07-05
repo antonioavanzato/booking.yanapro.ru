@@ -116,12 +116,43 @@ body::after {
 .success-message { text-align: center; padding: 2.5rem 0; display: none; }
 .success-icon { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
 .success-message h3 { font-family: 'Rubik', sans-serif; font-size: 1.6rem; font-weight: 500; margin-bottom: 0.5rem; }
+
+/* СТИЛИ COOKIE БАННЕРА */
+.cookie-banner {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  width: calc(100% - 3rem); max-width: 600px; background: var(--card);
+  border: 1px solid var(--ink-07); border-radius: 16px; padding: 1.1rem 1.5rem;
+  box-shadow: 0 15px 45px rgba(15,13,11,.1); z-index: 99999;
+  animation: slideUpCookie .5s var(--ease) both;
+}
+@keyframes slideUpCookie {
+  from { opacity: 0; transform: translate(-50%, 24px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes slideDownCookie {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, 24px); }
+}
+.cookie-content { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.cookie-content p { font-size: .82rem; color: var(--ink-60); line-height: 1.5; text-align: left; }
+.cookie-content p a { color: var(--primary); text-decoration: underline; }
+.cookie-btn {
+  padding: .65rem 1.4rem; border-radius: 8px; border: none;
+  background: var(--primary); color: var(--white); font-family: 'Jost', sans-serif;
+  font-size: .75rem; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; cursor: pointer; transition: background .2s;
+}
+.cookie-btn:hover { background: var(--primary-mid); }
+
 @media (max-width: 900px) {
   .header { padding: 1rem 1.25rem 0; }
   .booking-layout { grid-template-columns: 1fr; gap: 2rem; padding: 1rem 1.25rem 3rem; }
   .booking-form-card { position: static; padding: 2rem 1.5rem; }
   .booking-calendar { padding: 2rem 1.25rem; }
   .slots-grid { grid-template-columns: repeat(3, 1fr); }
+  .cookie-banner { bottom: 1rem; width: calc(100% - 2rem); padding: 1rem; }
+  .cookie-content { flex-direction: column; gap: 1rem; align-items: stretch; }
+  .cookie-btn { width: 100%; text-align: center; }
 }
 </style>
 </head>
@@ -181,6 +212,14 @@ body::after {
   </div>
 </div>
 
+<!-- БАННЕР COOKIE -->
+<div class="cookie-banner" id="cookieBanner" style="display: none;">
+  <div class="cookie-content">
+    <p>Мы используем файлы cookie для анализа трафика и улучшения работы сайта. Оставаясь на сайте, вы соглашаетесь с нашей <a href="https://yanapro.ru/legal-privacy" target="_blank" rel="noopener">Политикой конфиденциальности</a>.</p>
+    <button class="cookie-btn" onclick="acceptCookies()">Принять</button>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script>
@@ -195,7 +234,6 @@ const firebaseConfig = {
 };
 
 let db = null;
-// Дефолтное расписание, которое подстрахует при первой загрузке страницы
 let dynamicSchedule = {
   "1": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
   "2": ["08:00","09:00","10:00","11:00","12:00","18:00","19:00"],
@@ -266,6 +304,19 @@ if (phoneInput) {
     if (this.value.trim() === '+7') this.value = '';
   });
 }
+
+// Логика проверки и скрытия Cookie баннера
+function checkCookieConsent() {
+  if (!localStorage.getItem('cookieConsent')) {
+    document.getElementById('cookieBanner').style.display = 'block';
+  }
+}
+window.acceptCookies = function() {
+  localStorage.setItem('cookieConsent', 'true');
+  const banner = document.getElementById('cookieBanner');
+  banner.style.animation = 'slideDownCookie .4s var(--ease) both';
+  setTimeout(() => { banner.style.display = 'none'; }, 400);
+};
 
 async function fetchScheduleConfig() {
   if (!db) return;
@@ -421,6 +472,7 @@ bookingForm.onsubmit = async function(e) {
 };
 
 initFirebase(() => {
+  checkCookieConsent();
   loadBookings();
 });
 })();
