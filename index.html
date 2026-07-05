@@ -311,7 +311,7 @@ const firebaseConfig = {
 };
 
 let db = null;
-let dynamicSchedule = null; // Шаблон расписания, загруженный из БД
+let dynamicSchedule = null;
 
 function initFirebase(cb) {
   var tries = 0;
@@ -374,7 +374,6 @@ if (phoneInput) {
   });
 }
 
-// Загрузка динамического расписания из настроек БД
 async function fetchScheduleConfig() {
   if (!db) return;
   try {
@@ -385,7 +384,6 @@ async function fetchScheduleConfig() {
       throw new Error("Doc not found");
     }
   } catch (e) {
-    // Резервный дефолтный график, если в базе ничего не настроено
     dynamicSchedule = {
       "1": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
       "2": ["08:00","09:00","10:00","11:00","12:00","18:00","19:00"],
@@ -401,16 +399,11 @@ async function fetchScheduleConfig() {
 function getSlotsForDay(year, month, day) {
   const date = new Date(year, month, day);
   const dayOfWeek = date.getDay();
-  if (!dynamicSchedule) return [];
-  // Просто возвращаем настроенный массив строк времени для этого дня недели
   return dynamicSchedule[String(dayOfWeek)] || [];
 }
 
 async function loadBookings() {
   if (!db) return;
-  // Сначала подтянем расписание из настроек, затем забронированные слоты
-  await fetchScheduleConfig();
-  
   const snapshot = await db.collection('bookings').get();
   snapshot.forEach(doc => {
     const d = doc.data();
@@ -432,13 +425,14 @@ function renderCalendar() {
     const date = new Date(currentYear, currentMonth, day); date.setHours(0,0,0,0);
     const el = document.createElement('div'); el.className = 'cal-day'; el.textContent = day;
     const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    if (date < today) el.classList.add('past');
-    else if (date.getDay() === 0) el.classList.add('weekend');
-    else {
+    if (date < today) {
+      el.classList.add('past');
+    } else {
       const allSlots = getSlotsForDay(currentYear, currentMonth, day);
       if (allSlots.length > 0) {
-        if (allSlots.every(t => bookedSlots.has(`${dateStr}|${t}`))) el.classList.add('fully-booked');
-        else {
+        if (allSlots.every(t => bookedSlots.has(`${dateStr}|${t}`))) {
+          el.classList.add('fully-booked');
+        } else {
           el.classList.add('has-slots');
           el.onclick = () => {
             selectedDate = dateStr; selectedTime = null;
@@ -446,6 +440,9 @@ function renderCalendar() {
             el.classList.add('selected'); renderTimeSlots(dateStr); updateSummary();
           };
         }
+      } else {
+        // Убрали жесткую проверку getDay() === 0. Теперь если слотов нет — день становится выходным
+        el.classList.add('weekend');
       }
     }
     if (selectedDate === dateStr) el.classList.add('selected');
@@ -510,17 +507,15 @@ bookingForm.onsubmit = async function(e) {
 
   const formData = new FormData(this);
   const data = Object.fromEntries(formData.entries());
-  const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_G0kly8v1G95b8tC0b7gL_fG9vF63kY-5d8fH/exec"; // Ваш AppScript
+  const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_G0kly8v1G95b8tC0b7gL_fG9vF63kY-5d8fH/exec";
 
   try {
-    // 1. Запись в Firebase
     await db.collection('bookings').add({
       ...data,
       status: 'new',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // 2. Дублирование в Google Таблицы (AppScript)
     if (LOG_SCRIPT_URL) {
       fetch(LOG_SCRIPT_URL, {
         method: "POST",
@@ -530,7 +525,6 @@ bookingForm.onsubmit = async function(e) {
       }).catch(e => console.warn("AppScript logging failed", e));
     }
 
-    // Показываем сообщение об успехе
     bookingForm.style.display = "none";
     slotInfo.style.display = "none";
     successMessage.style.display = "block";
