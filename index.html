@@ -544,6 +544,15 @@ bookingForm.onsubmit = async function(e) {
   const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_G0kly8v1G95b8tC0b7gL_fG9vF63kY-5d8fH/exec";
 
   try {
+    // Защита от двойной брони: слот мог занять кто-то, пока страница была открыта
+    const daySnap = await db.collection('bookings').where('date', '==', data.date).get();
+    const alreadyTaken = daySnap.docs.some(doc => doc.data().time === data.time);
+    if (alreadyTaken) {
+      alert('К сожалению, это время только что забронировали. Пожалуйста, выберите другой свободный слот.');
+      location.reload();
+      return;
+    }
+
     await db.collection('bookings').add({
       ...data,
       status: 'new',
