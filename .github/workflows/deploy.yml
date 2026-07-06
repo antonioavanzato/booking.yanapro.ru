@@ -32,6 +32,7 @@ jobs:
           sed -e "s|__LOG_SCRIPT_URL__|${LOG_SCRIPT_URL}|g" \
               -e "s|__LOG_SCRIPT_KEY__|${LOG_SCRIPT_KEY}|g" \
               index.html > _site/index.html
+          cp embed.js _site/embed.js
 
       - uses: actions/upload-pages-artifact@v3
         with:
