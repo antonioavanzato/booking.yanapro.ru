@@ -167,6 +167,14 @@ body::after {
 }
 .cookie-btn:hover { background: var(--primary-mid); }
 
+/* ═══ EMBED-режим (?embed=1): страница живёт внутри iframe на yanapro.ru ═══ */
+body.is-embed { min-height: auto; background: transparent; }
+body.is-embed .header { display: none; }
+body.is-embed .cookie-banner { display: none !important; }
+body.is-embed .booking-layout { padding-top: .5rem; }
+body.is-embed .booking-form-card { position: static; }
+body.is-embed .success-overlay { align-items: flex-start; padding-top: 110px; }
+
 @media (max-width: 900px) {
   .header { padding: 1rem 1.25rem 0; }
   .booking-layout { grid-template-columns: 1fr; gap: 2rem; padding: 1rem 1.25rem 3rem; }
@@ -181,6 +189,10 @@ body::after {
 </style>
 </head>
 <body>
+
+<script>
+if (new URLSearchParams(location.search).has('embed')) document.body.classList.add('is-embed');
+</script>
 
 <header class="header">
   <a href="https://yanapro.ru" class="logo">
@@ -268,6 +280,19 @@ body::after {
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
+const IS_EMBED = document.body.classList.contains('is-embed');
+
+/* В embed-режиме сообщаем родительской странице (yanapro.ru) свою высоту,
+   чтобы iframe растягивался под контент без внутреннего скролла */
+if (IS_EMBED) {
+  const postHeight = () => {
+    parent.postMessage({ type: 'yp-booking-height', height: document.body.scrollHeight }, '*');
+  };
+  if ('ResizeObserver' in window) new ResizeObserver(postHeight).observe(document.body);
+  window.addEventListener('load', postHeight);
+  setInterval(postHeight, 1500);
+}
+
 const firebaseConfig = {
   apiKey: "AIzaSyCDMKmjn4BogKl6oswAdD7eaDTbBZRnJqk",
   authDomain: "yana-fitness-booking.firebaseapp.com",
@@ -350,6 +375,7 @@ if (phoneInput) {
 }
 
 function checkCookieConsent() {
+  if (IS_EMBED) return; // на yanapro.ru согласие на cookie обрабатывает сам сайт
   if (!localStorage.getItem('cookieConsent')) {
     document.getElementById('cookieBanner').style.display = 'block';
   }
@@ -576,6 +602,7 @@ bookingForm.onsubmit = async function(e) {
     }
 
     successOverlay.style.display = "flex";
+    if (IS_EMBED) parent.postMessage({ type: 'yp-booking-scroll-top' }, '*');
 
   } catch(err) {
     console.error("Booking submission error:", err);
