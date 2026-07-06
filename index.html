@@ -486,8 +486,10 @@ function updateSummary() {
     submitBtn.disabled = !isPolicyChecked;
     document.getElementById('formDate').value = selectedDate;
     document.getElementById('formTime').value = selectedTime;
+    submitBtn.textContent = 'Записаться';
   } else {
     submitBtn.disabled = true;
+    submitBtn.textContent = !selectedDate ? 'Сначала выберите дату' : 'Выберите время';
   }
 }
 
