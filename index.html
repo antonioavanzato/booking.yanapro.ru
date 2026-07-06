@@ -545,7 +545,8 @@ bookingForm.onsubmit = async function(e) {
 
   const formData = new FormData(this);
   const data = Object.fromEntries(formData.entries());
-  const LOG_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUs7UiC5603ebcn0PzWVetAmS34dNjmXBjduJg4j-nG9-DMqSqSpC7iLd_x2oeD7QK/exec";
+  const LOG_SCRIPT_URL = "__LOG_SCRIPT_URL__";
+  const LOG_SCRIPT_KEY = "__LOG_SCRIPT_KEY__";
 
   const slotId = `${data.date}_${data.time}`;
   const bookingRef = db.collection('bookings').doc(slotId);
@@ -565,8 +566,8 @@ bookingForm.onsubmit = async function(e) {
       tx.set(busyRef, { date: data.date, time: data.time });
     });
 
-    if (LOG_SCRIPT_URL) {
-      fetch(LOG_SCRIPT_URL + "?key=Musina80!", {
+    if (LOG_SCRIPT_URL && !LOG_SCRIPT_URL.startsWith("__")) {
+      fetch(LOG_SCRIPT_URL + "?key=" + encodeURIComponent(LOG_SCRIPT_KEY), {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
