@@ -458,56 +458,10 @@ function updateSummary() {
 document.getElementById('prevMonth').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
 document.getElementById('nextMonth').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
 
+/* .ics отдаёт сервер (blob-скачивание блокируется внутри iframe на wfolio) */
 window.addClientToCalendar = function() {
   if (!selectedDate || !selectedTime) return;
-  
-  const startDate = new Date(`${selectedDate}T${selectedTime}:00`);
-  const endDate = new Date(startDate.getTime() + 50 * 60 * 1000);
-  
-  const fmt = d => {
-    const pad = n => n < 10 ? '0' + n : n;
-    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' +
-           pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
-  };
-  
-  const summary = 'Фитнес-тренировка · Яна Самойлова';
-  const location = 'Казань, ул. Сибгата Хакима, 62, ЖК UNO, DDX UNO';
-  const desc = 'Жду вас на персональную тренировку!\\nС собой иметь спортивную форму и отличное настроение.\\nКонтакты Яны: +7 (962) 561-57-37';
-  
-  const icsContent = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//YanaPro//BookingCalendar//RU',
-    'BEGIN:VEVENT',
-    `UID:client-booking-${Date.now()}@yanapro.ru`,
-    `DTSTAMP:${fmt(new Date())}`,
-    `DTSTART:${fmt(startDate)}`,
-    `DTEND:${fmt(endDate)}`,
-    `SUMMARY:${summary}`,
-    `LOCATION:${location}`,
-    `DESCRIPTION:${desc}`,
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n');
-  
-  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-  const url = window.URL.createObjectURL(blob);
-
-  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
-             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-  if (isIOS) {
-    window.location.href = url;
-  } else {
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'yana_training_booking.ics');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+  window.location.href = `${API_URL}?action=ics&date=${encodeURIComponent(selectedDate)}&time=${encodeURIComponent(selectedTime)}`;
 };
 
 /* Атомарное бронирование: slot_id (дата_время) — первичный ключ в YDB,
