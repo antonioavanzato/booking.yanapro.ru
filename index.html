@@ -276,8 +276,6 @@ if (new URLSearchParams(location.search).has('embed')) document.body.classList.a
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
 const IS_EMBED = document.body.classList.contains('is-embed');
@@ -293,16 +291,10 @@ if (IS_EMBED) {
   setInterval(postHeight, 1500);
 }
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCDMKmjn4BogKl6oswAdD7eaDTbBZRnJqk",
-  authDomain: "yana-fitness-booking.firebaseapp.com",
-  projectId: "yana-fitness-booking",
-  storageBucket: "yana-fitness-booking.firebasestorage.app",
-  messagingSenderId: "940148052282",
-  appId: "1:940148052282:web:c4d82a89e757e2301e4003"
-};
+/* Бэкенд: Yandex Cloud Function (YDB, данные в РФ — 152-ФЗ) */
+const API_URL = "https://functions.yandexcloud.net/d4e027kjsdofjvtouavb";
+const API_KEY = "2b57e7065469136146474ec815375ca3";
 
-let db = null;
 let dynamicSchedule = {
   "1": ["09:00","10:00","11:00","12:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
   "2": ["08:00","09:00","10:00","11:00","12:00","18:00","19:00"],
@@ -312,25 +304,6 @@ let dynamicSchedule = {
   "6": ["10:00","11:00","12:00","14:00","15:00","16:00"],
   "0": []
 };
-
-function initFirebase(cb) {
-  var tries = 0;
-  (function attempt() {
-    if (window.firebase && firebase.initializeApp) {
-      try {
-        if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        try { db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); } catch (se) {}
-      } catch (e) { console.error('Firebase init error:', e); }
-      if (cb) cb();
-    } else if (tries++ < 60) {
-      setTimeout(attempt, 100);
-    } else {
-      console.error('Firebase SDK не загрузился');
-      if (cb) cb();
-    }
-  })();
-}
 
 const bookedSlots = new Set();
 let currentMonth = new Date().getMonth();
@@ -391,17 +364,6 @@ window.closeSuccessModal = function() {
   location.reload();
 };
 
-async function fetchScheduleConfig() {
-  if (!db) return;
-  try {
-    const doc = await db.collection('settings').doc('schedule').get();
-    if (doc.exists) {
-      dynamicSchedule = doc.data();
-    }
-  } catch (e) {
-    console.warn("Using default fallback schedule", e);
-  }
-}
 
 function getSlotsForDay(year, month, day) {
   const date = new Date(year, month, day);
@@ -409,16 +371,18 @@ function getSlotsForDay(year, month, day) {
   return dynamicSchedule[String(dayOfWeek)] || [];
 }
 
-/* ═══ ИЗМЕНЕНО: читаем занятость из busySlots (без персональных данных),
-   а не из bookings — форма больше не имеет прав читать bookings ═══ */
+/* Занятость (только date/time, без ПДн) и актуальное расписание — одним запросом к API */
 async function loadBookings() {
-  if (!db) return;
-  await fetchScheduleConfig();
-  const snapshot = await db.collection('busySlots').get();
-  snapshot.forEach(doc => {
-    const d = doc.data();
-    if (d.date && d.time) bookedSlots.add(`${d.date}|${d.time}`);
-  });
+  try {
+    const r = await fetch(API_URL + '?action=slots');
+    const { busy, schedule } = await r.json();
+    if (schedule) dynamicSchedule = schedule;
+    (busy || []).forEach(s => {
+      if (s.date && s.time) bookedSlots.add(`${s.date}|${s.time}`);
+    });
+  } catch (e) {
+    console.warn('Slots API unavailable, using fallback schedule', e);
+  }
   renderCalendar();
 }
 
@@ -546,9 +510,8 @@ window.addClientToCalendar = function() {
   setTimeout(() => window.URL.revokeObjectURL(url), 10000);
 };
 
-/* ═══ ИЗМЕНЕНО: атомарное бронирование через транзакцию.
-   ID документа = дата_время → Firestore сам не даст создать дубликат,
-   т.к. запись и проверка занятости теперь одна неделимая операция. ═══ */
+/* Атомарное бронирование: slot_id (дата_время) — первичный ключ в YDB,
+   дубликат отклоняется сервером с кодом 409 (SLOT_TAKEN). */
 bookingForm.onsubmit = async function(e) {
   e.preventDefault();
   const btn = submitBtn;
@@ -571,35 +534,15 @@ bookingForm.onsubmit = async function(e) {
 
   const formData = new FormData(this);
   const data = Object.fromEntries(formData.entries());
-  const LOG_SCRIPT_URL = "__LOG_SCRIPT_URL__";
-  const LOG_SCRIPT_KEY = "__LOG_SCRIPT_KEY__";
-
-  const slotId = `${data.date}_${data.time}`;
-  const bookingRef = db.collection('bookings').doc(slotId);
-  const busyRef = db.collection('busySlots').doc(slotId);
 
   try {
-    await db.runTransaction(async (tx) => {
-      const busyDoc = await tx.get(busyRef);
-      if (busyDoc.exists) {
-        throw new Error('SLOT_TAKEN');
-      }
-      tx.set(bookingRef, {
-        ...data,
-        status: 'new',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      tx.set(busyRef, { date: data.date, time: data.time });
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, key: API_KEY })
     });
-
-    if (LOG_SCRIPT_URL && !LOG_SCRIPT_URL.startsWith("__")) {
-      fetch(LOG_SCRIPT_URL + "?key=" + encodeURIComponent(LOG_SCRIPT_KEY), {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(data)
-      }).catch(e => console.warn("AppScript logging failed", e));
-    }
+    if (resp.status === 409) throw new Error('SLOT_TAKEN');
+    if (!resp.ok) throw new Error('SUBMIT_FAILED');
 
     successOverlay.style.display = "flex";
     if (IS_EMBED) parent.postMessage({ type: 'yp-booking-scroll-top' }, '*');
@@ -617,10 +560,8 @@ bookingForm.onsubmit = async function(e) {
   }
 };
 
-initFirebase(() => {
-  checkCookieConsent();
-  loadBookings();
-});
+checkCookieConsent();
+loadBookings();
 })();
 </script>
 </body>
